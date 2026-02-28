@@ -1,0 +1,23 @@
+#cloud-config
+package_update: true
+package_upgrade: false
+
+write_files:
+  - path: /etc/rancher/k3s/config.yaml
+    permissions: "0600"
+    owner: root:root
+    content: |
+      token: ${k3s_token}
+      write-kubeconfig-mode: "0644"
+      node-ip: ${server_node_ip}
+      advertise-address: ${server_node_ip}
+      tls-san:
+        - ${server_node_ip}
+%{ if disable_traefik ~}
+      disable:
+        - traefik
+%{ endif ~}
+
+runcmd:
+  - timedatectl set-timezone Asia/Seoul || true
+  - curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION='${k3s_version}' sh -s - server

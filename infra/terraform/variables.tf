@@ -40,6 +40,21 @@ variable "image_ocid" {
   type = string
 }
 
+variable "k3s_token" {
+  type      = string
+  sensitive = true
+}
+
+variable "k3s_version" {
+  type    = string
+  default = "v1.31.6+k3s1"
+}
+
+variable "k3s_disable_traefik" {
+  type    = bool
+  default = true
+}
+
 variable "shape" {
   type    = string
   default = "VM.Standard.A1.Flex"

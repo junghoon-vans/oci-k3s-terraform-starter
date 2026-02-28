@@ -7,6 +7,9 @@ compartment_ocid     = ""
 allowed_ssh_cidr     = ""
 ssh_authorized_keys  = ""
 image_ocid           = ""
+k3s_token            = ""
 
 # Optional
 # availability_domain = "kIdk:AP-SEOUL-1-AD-1"
+# k3s_version         = "v1.31.6+k3s1"
+# k3s_disable_traefik = true

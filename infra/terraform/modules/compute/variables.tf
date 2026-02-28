@@ -34,7 +34,9 @@ variable "instances" {
   type = map(object({
     subnet_id        = string
     assign_public_ip = bool
+    private_ip       = string
     nsg_ids          = list(string)
     role             = string
+    user_data_base64 = string
   }))
 }

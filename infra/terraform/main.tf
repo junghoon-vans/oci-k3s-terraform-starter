@@ -12,31 +12,55 @@ data "oci_identity_availability_domains" "ads" {
 
 locals {
   selected_availability_domain = coalesce(var.availability_domain, data.oci_identity_availability_domains.ads.availability_domains[0].name)
+  cloud_init_dir               = "${path.root}/../../platform/cloud-init"
 
   instance_definitions = {
     "bastion-1" = {
       subnet_id        = module.network.public_subnet_id
       assign_public_ip = true
+      private_ip       = "10.0.1.11"
       nsg_ids          = [module.security.bastion_nsg_id]
       role             = "bastion"
+      user_data_base64 = base64encode(templatefile("${local.cloud_init_dir}/bastion.yaml.tftpl", {}))
     }
     "k3s-node-1" = {
       subnet_id        = module.network.private_subnet_id
       assign_public_ip = false
+      private_ip       = "10.0.10.11"
       nsg_ids          = [module.security.k3s_nsg_id]
       role             = "server+worker"
+      user_data_base64 = base64encode(templatefile("${local.cloud_init_dir}/k3s-server.yaml.tftpl", {
+        k3s_token       = var.k3s_token
+        k3s_version     = var.k3s_version
+        server_node_ip  = "10.0.10.11"
+        disable_traefik = var.k3s_disable_traefik
+      }))
     }
     "k3s-node-2" = {
       subnet_id        = module.network.private_subnet_id
       assign_public_ip = false
+      private_ip       = "10.0.10.12"
       nsg_ids          = [module.security.k3s_nsg_id]
       role             = "worker"
+      user_data_base64 = base64encode(templatefile("${local.cloud_init_dir}/k3s-agent.yaml.tftpl", {
+        k3s_token      = var.k3s_token
+        k3s_version    = var.k3s_version
+        server_node_ip = "10.0.10.11"
+        agent_node_ip  = "10.0.10.12"
+      }))
     }
     "k3s-node-3" = {
       subnet_id        = module.network.private_subnet_id
       assign_public_ip = false
+      private_ip       = "10.0.10.13"
       nsg_ids          = [module.security.k3s_nsg_id]
       role             = "worker"
+      user_data_base64 = base64encode(templatefile("${local.cloud_init_dir}/k3s-agent.yaml.tftpl", {
+        k3s_token      = var.k3s_token
+        k3s_version    = var.k3s_version
+        server_node_ip = "10.0.10.11"
+        agent_node_ip  = "10.0.10.13"
+      }))
     }
   }
 }

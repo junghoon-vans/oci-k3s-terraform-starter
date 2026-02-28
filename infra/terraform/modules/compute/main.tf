@@ -13,12 +13,14 @@ resource "oci_core_instance" "this" {
   create_vnic_details {
     subnet_id        = each.value.subnet_id
     assign_public_ip = each.value.assign_public_ip
+    private_ip       = each.value.private_ip
     nsg_ids          = each.value.nsg_ids
   }
 
   metadata = {
     ssh_authorized_keys = var.ssh_authorized_keys
     k3s_role            = each.value.role
+    user_data           = each.value.user_data_base64
   }
 
   source_details {

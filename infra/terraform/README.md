@@ -56,13 +56,24 @@ This layout is directly usable as a ZIP for OCI Resource Manager stack upload.
     - Ingress `10250/tcp` node-to-node (optional, enabled by default)
     - Egress all
 
-## k3s Role Plan and Cloud-init Placeholder
+## k3s Role Plan and Cloud-init
 
-- `k3s-node-1`: server + worker (planned)
-- `k3s-node-2`: worker (planned)
-- `k3s-node-3`: worker (planned)
+- `k3s-node-1`: server + worker
+- `k3s-node-2`: worker
+- `k3s-node-3`: worker
 
-No real k3s bootstrap script is applied yet. This repository only prepares infra and role metadata for next-step cloud-init provisioning.
+Cloud-init templates are loaded from `../../platform/cloud-init`:
+
+- `bastion.yaml.tftpl`
+- `k3s-server.yaml.tftpl`
+- `k3s-agent.yaml.tftpl`
+
+The stack assigns static private IPs to simplify join flow:
+
+- `bastion-1`: `10.0.1.11`
+- `k3s-node-1`: `10.0.10.11`
+- `k3s-node-2`: `10.0.10.12`
+- `k3s-node-3`: `10.0.10.13`
 
 ## Image Input
 
@@ -91,7 +102,10 @@ Use an image OCID that matches:
 - `allowed_ssh_cidr`
 - `ssh_authorized_keys`
 - `image_ocid`
+- `k3s_token`
 - optional `availability_domain`
+- optional `k3s_version`
+- optional `k3s_disable_traefik`
 
 Copy example vars:
 
@@ -153,13 +167,13 @@ terraform destroy
 Access bastion directly:
 
 ```bash
-ssh -i ~/.ssh/id_ed25519 ubuntu@<bastion_public_ip>
+ssh -i ~/.ssh/oci_k3s ubuntu@<bastion_public_ip>
 ```
 
 Access private k3s node through bastion with ProxyJump:
 
 ```bash
-ssh -i ~/.ssh/id_ed25519 \
+ssh -i ~/.ssh/oci_k3s \
   -J ubuntu@<bastion_public_ip> \
   ubuntu@<k3s_node_private_ip>
 ```
@@ -170,12 +184,12 @@ Optional SSH config snippet:
 Host bastion
   HostName <bastion_public_ip>
   User ubuntu
-  IdentityFile ~/.ssh/id_ed25519
+  IdentityFile ~/.ssh/oci_k3s
 
 Host k3s-node-1
   HostName <k3s_node_1_private_ip>
   User ubuntu
-  IdentityFile ~/.ssh/id_ed25519
+  IdentityFile ~/.ssh/oci_k3s
   ProxyJump bastion
 ```
 
