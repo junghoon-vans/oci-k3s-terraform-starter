@@ -1,6 +1,6 @@
 # OCI Terraform: ARM Always Free 4 Nodes
 
-Run Terraform commands from `infra/terraform`.
+Run Terraform commands from `terraform`.
 
 This project creates 4 OCI ARM Always Free instances with modular Terraform:
 
@@ -62,7 +62,7 @@ This layout is directly usable as a ZIP for OCI Resource Manager stack upload.
 - `k3s-node-2`: worker
 - `k3s-node-3`: worker
 
-Cloud-init templates are loaded from `../../platform/cloud-init`:
+Cloud-init templates are loaded from `../cloud-init`:
 
 - `bastion.yaml.tftpl`
 - `k3s-server.yaml.tftpl`
