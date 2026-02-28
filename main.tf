@@ -66,7 +66,6 @@ module "compute" {
   availability_domain     = local.selected_availability_domain
   ssh_authorized_keys     = var.ssh_authorized_keys
   image_ocid              = var.image_ocid
-  ubuntu_image_build      = var.ubuntu_image_build
   shape                   = var.shape
   ocpus                   = var.ocpus
   memory_in_gbs           = var.memory_in_gbs

@@ -1,26 +1,3 @@
-data "oci_core_images" "ubuntu_2404_a1" {
-  compartment_id           = var.compartment_ocid
-  operating_system         = "Canonical Ubuntu"
-  operating_system_version = "24.04"
-  shape                    = var.shape
-  state                    = "AVAILABLE"
-  sort_by                  = "TIMECREATED"
-  sort_order               = "DESC"
-}
-
-locals {
-  images_matching_build = [
-    for image in data.oci_core_images.ubuntu_2404_a1.images : image
-    if can(regex(var.ubuntu_image_build, try(image.display_name, ""))) || can(regex(var.ubuntu_image_build, try(image.name, "")))
-  ]
-
-  selected_image_id = coalesce(
-    var.image_ocid,
-    try(local.images_matching_build[0].id, null),
-    try(data.oci_core_images.ubuntu_2404_a1.images[0].id, null)
-  )
-}
-
 resource "oci_core_instance" "this" {
   for_each            = var.instances
   compartment_id      = var.compartment_ocid
@@ -46,15 +23,8 @@ resource "oci_core_instance" "this" {
 
   source_details {
     source_type             = "image"
-    source_id               = local.selected_image_id
+    source_id               = var.image_ocid
     boot_volume_size_in_gbs = var.boot_volume_size_in_gbs
-  }
-
-  lifecycle {
-    precondition {
-      condition     = local.selected_image_id != null
-      error_message = "No Ubuntu 24.04 A1 image found. Set image_ocid explicitly for this region/AD."
-    }
   }
 }
 

@@ -5,7 +5,7 @@ This project creates 4 OCI ARM Always Free instances with modular Terraform:
 - `bastion-1` in a public subnet (public IP assigned)
 - `k3s-node-1`, `k3s-node-2`, `k3s-node-3` in a private subnet (no public IP)
 - All 4 instances use identical compute spec:
-  - Image: Canonical Ubuntu 24.04 (target build `2026.01.29-0`)
+  - Image: Canonical Ubuntu 24.04 build `2026.01.29-0` (set explicitly with `image_ocid`)
   - Shape: `VM.Standard.A1.Flex`
   - OCPU: `1`
   - Memory: `6 GB`
@@ -62,22 +62,15 @@ This layout is directly usable as a ZIP for OCI Resource Manager stack upload.
 
 No real k3s bootstrap script is applied yet. This repository only prepares infra and role metadata for next-step cloud-init provisioning.
 
-## Image Selection Logic
+## Image Input
 
-`modules/compute` uses `data.oci_core_images` with:
+`image_ocid` is required and used directly for all instances.
 
-- `operating_system = "Canonical Ubuntu"`
-- `operating_system_version = "24.04"`
-- `shape = "VM.Standard.A1.Flex"`
-- sorted by latest creation time
+Use an image OCID that matches:
 
-Selection order:
-
-1. `image_ocid` variable (if provided)
-2. image matched to `ubuntu_image_build` (default `2026.01.29-0`)
-3. latest filtered Ubuntu 24.04 image for A1
-
-If your region does not expose that build yet, set `image_ocid` explicitly.
+- Canonical Ubuntu 24.04
+- Build `2026.01.29-0`
+- `VM.Standard.A1.Flex` compatibility
 
 ## Prerequisites
 
@@ -95,8 +88,8 @@ If your region does not expose that build yet, set `image_ocid` explicitly.
 - `compartment_ocid`
 - `allowed_ssh_cidr`
 - `ssh_authorized_keys`
+- `image_ocid`
 - optional `availability_domain`
-- optional `image_ocid`
 
 Copy example vars:
 
@@ -195,6 +188,6 @@ If apply fails on instance creation:
 Checks:
 
 1. Retry with a different AD (`availability_domain`)
-2. Set explicit `image_ocid`
+2. Verify `image_ocid` is valid in this region/AD
 3. Confirm tenancy service limits and current usage
 4. Confirm subnet CIDR and security rules are not overlapping/conflicting

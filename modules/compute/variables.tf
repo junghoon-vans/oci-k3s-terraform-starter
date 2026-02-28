@@ -11,11 +11,6 @@ variable "ssh_authorized_keys" {
 }
 
 variable "image_ocid" {
-  type    = string
-  default = null
-}
-
-variable "ubuntu_image_build" {
   type = string
 }
 

@@ -37,13 +37,7 @@ variable "availability_domain" {
 }
 
 variable "image_ocid" {
-  type    = string
-  default = null
-}
-
-variable "ubuntu_image_build" {
-  type    = string
-  default = "2026.01.29-0"
+  type = string
 }
 
 variable "shape" {
