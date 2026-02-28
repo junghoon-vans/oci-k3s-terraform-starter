@@ -9,6 +9,9 @@ write_files:
     content: |
       token: ${k3s_token}
       write-kubeconfig-mode: "0644"
+%{ if !server_enable_agent ~}
+      disable-agent: true
+%{ endif ~}
       node-ip: ${server_node_ip}
       advertise-address: ${server_node_ip}
       tls-san:
@@ -35,6 +38,7 @@ write_files:
       ensure_rule INPUT -s 10.0.10.0/24 -p tcp --dport 6443 -j ACCEPT
       ensure_rule INPUT -s 10.0.10.0/24 -p udp --dport 8472 -j ACCEPT
       ensure_rule INPUT -s 10.0.10.0/24 -p tcp --dport 10250 -j ACCEPT
+      ensure_rule INPUT -i tailscale0 -p tcp --dport 22 -j ACCEPT
   - path: /etc/systemd/system/k3s-host-firewall.service
     permissions: "0644"
     owner: root:root
@@ -54,6 +58,8 @@ write_files:
 
 runcmd:
   - timedatectl set-timezone Asia/Seoul || true
+  - curl -fsSL https://tailscale.com/install.sh | sh
+  - tailscale up --auth-key='${tailscale_auth_key}' --advertise-tags='${tailscale_tag}' --ssh --accept-dns=false
   - systemctl daemon-reload
   - systemctl enable --now k3s-host-firewall.service
   - curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION='${k3s_version}' sh -s - server

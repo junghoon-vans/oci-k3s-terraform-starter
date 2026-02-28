@@ -1,13 +1,5 @@
 locals {
-  k3s_names = ["k3s-node-1", "k3s-node-2", "k3s-node-3"]
-}
-
-output "bastion_public_ip" {
-  value = module.compute.public_ips["bastion-1"]
-}
-
-output "bastion_private_ip" {
-  value = module.compute.private_ips["bastion-1"]
+  k3s_names = ["k3s-node-1", "k3s-node-2", "k3s-node-3", "k3s-node-4"]
 }
 
 output "k3s_private_ips" {
@@ -24,7 +16,6 @@ output "vcn_id" {
 
 output "subnet_ids" {
   value = {
-    public  = module.network.public_subnet_id
     private = module.network.private_subnet_id
   }
 }

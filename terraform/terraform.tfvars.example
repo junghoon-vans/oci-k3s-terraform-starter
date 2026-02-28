@@ -4,12 +4,14 @@ fingerprint          = ""
 private_key_path     = ""
 region               = "ap-seoul-1"
 compartment_ocid     = ""
-allowed_ssh_cidr     = ""
 ssh_authorized_keys  = ""
 image_ocid           = ""
 k3s_token            = ""
+tailscale_auth_key_server = ""
+tailscale_auth_key_agent  = ""
 
 # Optional
 # availability_domain = "kIdk:AP-SEOUL-1-AD-1"
 # k3s_version         = "v1.31.6+k3s1"
 # k3s_disable_traefik = true
+# k3s_server_enable_agent = true

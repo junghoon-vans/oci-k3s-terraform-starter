@@ -1,95 +1,39 @@
-# OCI Terraform: ARM Always Free 4 Nodes
+# OCI Terraform: k3s + Tailscale (4 nodes)
 
-Run Terraform commands from `terraform`.
+Run Terraform commands from `terraform/`.
 
-This project creates 4 OCI ARM Always Free instances with modular Terraform:
+## Topology
 
-- `bastion-1` in a public subnet (public IP assigned)
-- `k3s-node-1`, `k3s-node-2`, `k3s-node-3` in a private subnet (no public IP)
-- All 4 instances use identical compute spec:
-  - Image: Canonical Ubuntu 24.04 build `2026.01.29-0` (set explicitly with `image_ocid`)
-  - Shape: `VM.Standard.A1.Flex`
-  - OCPU: `1`
-  - Memory: `6 GB`
-  - Boot Volume: `50 GB`
+- `k3s-node-1`: k3s server + agent
+- `k3s-node-2`: k3s agent
+- `k3s-node-3`: k3s agent
+- `k3s-node-4`: k3s agent
+
+All nodes are in private subnet and use Tailscale for access.
+
+## Spec
+
+- Image: Canonical Ubuntu 24.04 (`image_ocid` required)
+- Shape: `VM.Standard.A1.Flex`
+- OCPU: `1`
+- Memory: `6 GB`
+- Boot volume: `50 GB`
 
 ## Project Structure
 
 ```text
-.
+terraform/
 ├── backend.tf.example
 ├── main.tf
 ├── outputs.tf
 ├── terraform.tfvars.example
 ├── variables.tf
 ├── versions.tf
-└── modules
-    ├── compute
-    │   ├── main.tf
-    │   ├── outputs.tf
-    │   └── variables.tf
-    ├── network
-    │   ├── main.tf
-    │   ├── outputs.tf
-    │   └── variables.tf
-    └── security
-        ├── main.tf
-        ├── outputs.tf
-        └── variables.tf
+└── modules/
+    ├── network/
+    ├── security/
+    └── compute/
 ```
-
-This layout is directly usable as a ZIP for OCI Resource Manager stack upload.
-
-## What Gets Created
-
-- VCN
-- Public subnet + route table + Internet Gateway
-- Private subnet + route table + NAT Gateway
-- NSGs and NSG rules
-  - Bastion NSG
-    - Ingress `22/tcp` from `allowed_ssh_cidr`
-    - Egress all
-  - k3s NSG
-    - Ingress `22/tcp` from Bastion NSG only
-    - Ingress `6443/tcp` node-to-node
-    - Ingress `8472/udp` node-to-node
-    - Ingress `10250/tcp` node-to-node (optional, enabled by default)
-    - Egress all
-
-## k3s Role Plan and Cloud-init
-
-- `k3s-node-1`: server + worker
-- `k3s-node-2`: worker
-- `k3s-node-3`: worker
-
-Cloud-init templates are loaded from `../cloud-init`:
-
-- `bastion.yaml.tftpl`
-- `k3s-server.yaml.tftpl`
-- `k3s-agent.yaml.tftpl`
-
-The stack assigns static private IPs to simplify join flow:
-
-- `bastion-1`: `10.0.1.11`
-- `k3s-node-1`: `10.0.10.11`
-- `k3s-node-2`: `10.0.10.12`
-- `k3s-node-3`: `10.0.10.13`
-
-## Image Input
-
-`image_ocid` is required and used directly for all instances.
-
-Use an image OCID that matches:
-
-- Canonical Ubuntu 24.04
-- Build `2026.01.29-0`
-- `VM.Standard.A1.Flex` compatibility
-
-## Prerequisites
-
-- Terraform `>= 1.5`
-- OCI CLI/API key auth configured locally
-- Proper IAM permissions in the target compartment
 
 ## Required Inputs
 
@@ -99,111 +43,61 @@ Use an image OCID that matches:
 - `private_key_path`
 - `region` (default `ap-seoul-1`)
 - `compartment_ocid`
-- `allowed_ssh_cidr`
 - `ssh_authorized_keys`
 - `image_ocid`
 - `k3s_token`
-- optional `availability_domain`
-- optional `k3s_version`
-- optional `k3s_disable_traefik`
+- `tailscale_auth_key_server`
+- `tailscale_auth_key_agent`
 
-Copy example vars:
+Optional:
+
+- `availability_domain`
+- `k3s_version`
+- `k3s_disable_traefik`
+- `k3s_server_enable_agent` (default `true`)
+
+## Quick Start
 
 ```bash
 cp terraform.tfvars.example terraform.tfvars
-```
-
-Then fill real values in `terraform.tfvars`.
-
-## Remote tfstate (OCI Object Storage backend)
-
-This repo provides `backend.tf.example` to avoid breaking OCI Resource Manager ZIP usage by default.
-
-For local CLI backend enablement:
-
-1. Copy and edit backend config
-
-```bash
 cp backend.tf.example backend.tf
-```
-
-2. Fill:
-   - `bucket`
-   - `namespace`
-   - `region`
-   - `key`
-
-3. Initialize with migration:
-
-```bash
 terraform init -reconfigure
-```
-
-## Deploy
-
-```bash
-terraform init
 terraform plan -out tfplan
 terraform apply tfplan
 ```
 
-## Destroy
-
-```bash
-terraform destroy
-```
-
 ## Outputs
 
-- `bastion_public_ip`
-- `bastion_private_ip`
 - `k3s_private_ips`
 - `instance_ocids`
 - `vcn_id`
 - `subnet_ids`
 
-## SSH Access and ProxyJump Example
+## Verification
 
-Access bastion directly:
-
-```bash
-ssh -i ~/.ssh/oci_k3s ubuntu@<bastion_public_ip>
-```
-
-Access private k3s node through bastion with ProxyJump:
+1. Confirm nodes are online in your tailnet:
 
 ```bash
-ssh -i ~/.ssh/oci_k3s \
-  -J ubuntu@<bastion_public_ip> \
-  ubuntu@<k3s_node_private_ip>
+tailscale status
 ```
 
-Optional SSH config snippet:
+2. SSH to `k3s-node-1` via Tailscale:
 
-```sshconfig
-Host bastion
-  HostName <bastion_public_ip>
-  User ubuntu
-  IdentityFile ~/.ssh/oci_k3s
-
-Host k3s-node-1
-  HostName <k3s_node_1_private_ip>
-  User ubuntu
-  IdentityFile ~/.ssh/oci_k3s
-  ProxyJump bastion
+```bash
+tailscale ssh ubuntu@<k3s-node-1-tailscale-name>
 ```
 
-## Capacity and Failure Troubleshooting
+3. On `k3s-node-1`, check cluster health:
 
-If apply fails on instance creation:
+```bash
+sudo k3s kubectl get nodes -o wide
+```
 
-- Region/AD has temporary A1 capacity shortage
-- Image build is not currently available in selected AD
-- Always Free quota already consumed (A1 total limit: 4 OCPU, 24 GB memory)
+Expected: `k3s-node-1/2/3/4` all `Ready`.
 
-Checks:
+If access is blocked, update Tailscale ACL/tag ownership so your operator identity can reach `tag:k3s-server` and `tag:k3s-agent`.
 
-1. Retry with a different AD (`availability_domain`)
-2. Verify `image_ocid` is valid in this region/AD
-3. Confirm tenancy service limits and current usage
-4. Confirm subnet CIDR and security rules are not overlapping/conflicting
+## Notes
+
+- `metadata.user_data` changes can force instance replacement.
+- Keep `terraform.tfvars`, `backend.tf`, keys, and kubeconfig out of git.

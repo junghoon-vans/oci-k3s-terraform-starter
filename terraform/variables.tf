@@ -23,10 +23,6 @@ variable "compartment_ocid" {
   type = string
 }
 
-variable "allowed_ssh_cidr" {
-  type = string
-}
-
 variable "ssh_authorized_keys" {
   type = string
 }
@@ -53,6 +49,21 @@ variable "k3s_version" {
 variable "k3s_disable_traefik" {
   type    = bool
   default = true
+}
+
+variable "k3s_server_enable_agent" {
+  type    = bool
+  default = true
+}
+
+variable "tailscale_auth_key_server" {
+  type      = string
+  sensitive = true
+}
+
+variable "tailscale_auth_key_agent" {
+  type      = string
+  sensitive = true
 }
 
 variable "shape" {
@@ -83,11 +94,6 @@ variable "enable_kubelet_port" {
 variable "vcn_cidr_block" {
   type    = string
   default = "10.0.0.0/16"
-}
-
-variable "public_subnet_cidr" {
-  type    = string
-  default = "10.0.1.0/24"
 }
 
 variable "private_subnet_cidr" {

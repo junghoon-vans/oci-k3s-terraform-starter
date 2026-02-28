@@ -6,10 +6,6 @@ variable "vcn_id" {
   type = string
 }
 
-variable "allowed_ssh_cidr" {
-  type = string
-}
-
 variable "enable_kubelet_port" {
   type    = bool
   default = true
