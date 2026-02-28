@@ -77,6 +77,30 @@ locals {
       }))
     }
   }
+
+  ingress_listener_to_nodeport = {
+    http = {
+      listener_port = var.ingress_listener_http_port
+      node_port     = var.ingress_nodeport_http
+    }
+    https = {
+      listener_port = var.ingress_listener_https_port
+      node_port     = var.ingress_nodeport_https
+    }
+  }
+
+  ingress_backend_targets = {
+    for target in flatten([
+      for listener_key, listener in local.ingress_listener_to_nodeport : [
+        for node_name, node in local.instance_definitions : {
+          key             = "${listener_key}-${node_name}"
+          backend_set_key = listener_key
+          ip_address      = node.private_ip
+          node_port       = listener.node_port
+        }
+      ]
+    ]) : target.key => target
+  }
 }
 
 module "network" {
@@ -85,6 +109,7 @@ module "network" {
   compartment_ocid = var.compartment_ocid
   vcn_cidr_block   = var.vcn_cidr_block
   private_subnet   = var.private_subnet_cidr
+  public_subnet    = var.public_subnet_cidr
 }
 
 module "security" {
@@ -93,6 +118,8 @@ module "security" {
   compartment_ocid    = var.compartment_ocid
   vcn_id              = module.network.vcn_id
   enable_kubelet_port = var.enable_kubelet_port
+  nlb_listener_ports  = [var.ingress_listener_http_port, var.ingress_listener_https_port]
+  ingress_nodeports   = [var.ingress_nodeport_http, var.ingress_nodeport_https]
 }
 
 module "compute" {

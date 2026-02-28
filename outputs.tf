@@ -17,5 +17,21 @@ output "vcn_id" {
 output "subnet_ids" {
   value = {
     private = module.network.private_subnet_id
+    public  = module.network.public_subnet_id
+  }
+}
+
+output "ingress_nlb" {
+  value = {
+    id        = oci_network_load_balancer_network_load_balancer.ingress.id
+    public_ip = try(oci_network_load_balancer_network_load_balancer.ingress.ip_addresses[0].ip_address, null)
+    listeners = {
+      http  = var.ingress_listener_http_port
+      https = var.ingress_listener_https_port
+    }
+    nodeports = {
+      http  = var.ingress_nodeport_http
+      https = var.ingress_nodeport_https
+    }
   }
 }

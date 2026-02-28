@@ -10,12 +10,14 @@ Terraform starter for building a 4-node OCI ARM Always Free environment with k3s
 - `k3s-node-4`: k3s agent
 
 All nodes are private-only and accessed through Tailscale.
+A public OCI Network Load Balancer (NLB) is provisioned for ingress (80/443) and forwards to node ports (30080/30443).
 
 ## What gets created
 
 - 4 k3s instances in private subnet (`10.0.10.0/24`)
-- VCN, private route table, NAT Gateway
-- NSG rules for node-to-node k3s traffic
+- VCN, public/private subnets, route tables, IGW, NAT Gateway
+- Public OCI NLB for ingress on 80/443
+- NSG rules for node-to-node k3s traffic and NLB-to-node ingress
 - Cloud-init bootstrap for k3s and Tailscale tags
 
 ARM Always Free sizing:
@@ -52,9 +54,14 @@ ARM Always Free sizing:
 Optional:
 
 - `availability_domain`
+- `public_subnet_cidr`
 - `k3s_version`
 - `k3s_disable_traefik`
 - `k3s_server_enable_agent` (default `true`)
+- `ingress_listener_http_port` (default `80`)
+- `ingress_listener_https_port` (default `443`)
+- `ingress_nodeport_http` (default `30080`)
+- `ingress_nodeport_https` (default `30443`)
 
 ## Quick start
 
@@ -79,6 +86,7 @@ terraform apply tfplan
 - `instance_ocids`
 - `vcn_id`
 - `subnet_ids`
+- `ingress_nlb`
 
 ## Verification
 

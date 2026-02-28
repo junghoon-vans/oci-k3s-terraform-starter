@@ -58,3 +58,60 @@ resource "oci_core_network_security_group_security_rule" "k3s_egress_all" {
   destination               = "0.0.0.0/0"
   destination_type          = "CIDR_BLOCK"
 }
+
+resource "oci_core_network_security_group" "nlb" {
+  compartment_id = var.compartment_ocid
+  vcn_id         = var.vcn_id
+  display_name   = "k3s-ingress-nlb-nsg"
+}
+
+resource "oci_core_network_security_group_security_rule" "nlb_ingress_tcp" {
+  for_each = toset([for port in var.nlb_listener_ports : tostring(port)])
+
+  network_security_group_id = oci_core_network_security_group.nlb.id
+  direction                 = "INGRESS"
+  protocol                  = "6"
+  source                    = "0.0.0.0/0"
+  source_type               = "CIDR_BLOCK"
+
+  tcp_options {
+    destination_port_range {
+      min = tonumber(each.value)
+      max = tonumber(each.value)
+    }
+  }
+}
+
+resource "oci_core_network_security_group_security_rule" "nlb_egress_to_k3s_nodeports" {
+  for_each = toset([for port in var.ingress_nodeports : tostring(port)])
+
+  network_security_group_id = oci_core_network_security_group.nlb.id
+  direction                 = "EGRESS"
+  protocol                  = "6"
+  destination               = oci_core_network_security_group.k3s.id
+  destination_type          = "NETWORK_SECURITY_GROUP"
+
+  tcp_options {
+    destination_port_range {
+      min = tonumber(each.value)
+      max = tonumber(each.value)
+    }
+  }
+}
+
+resource "oci_core_network_security_group_security_rule" "k3s_ingress_from_nlb_nodeports" {
+  for_each = toset([for port in var.ingress_nodeports : tostring(port)])
+
+  network_security_group_id = oci_core_network_security_group.k3s.id
+  direction                 = "INGRESS"
+  protocol                  = "6"
+  source                    = oci_core_network_security_group.nlb.id
+  source_type               = "NETWORK_SECURITY_GROUP"
+
+  tcp_options {
+    destination_port_range {
+      min = tonumber(each.value)
+      max = tonumber(each.value)
+    }
+  }
+}

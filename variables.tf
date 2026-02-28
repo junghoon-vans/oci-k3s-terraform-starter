@@ -100,3 +100,28 @@ variable "private_subnet_cidr" {
   type    = string
   default = "10.0.10.0/24"
 }
+
+variable "public_subnet_cidr" {
+  type    = string
+  default = "10.0.20.0/24"
+}
+
+variable "ingress_listener_http_port" {
+  type    = number
+  default = 80
+}
+
+variable "ingress_listener_https_port" {
+  type    = number
+  default = 443
+}
+
+variable "ingress_nodeport_http" {
+  type    = number
+  default = 30080
+}
+
+variable "ingress_nodeport_https" {
+  type    = number
+  default = 30443
+}

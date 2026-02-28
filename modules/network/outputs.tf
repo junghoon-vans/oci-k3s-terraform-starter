@@ -5,3 +5,7 @@ output "vcn_id" {
 output "private_subnet_id" {
   value = oci_core_subnet.private.id
 }
+
+output "public_subnet_id" {
+  value = oci_core_subnet.public.id
+}
