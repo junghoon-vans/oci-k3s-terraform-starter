@@ -1,0 +1,12 @@
+tenancy_ocid         = "ocid1.tenancy.oc1..exampleuniqueID"
+user_ocid            = "ocid1.user.oc1..exampleuniqueID"
+fingerprint          = "aa:bb:cc:dd:ee:ff:11:22:33:44:55:66:77:88:99:00"
+private_key_path     = "~/.oci/oci_api_key.pem"
+region               = "ap-seoul-1"
+compartment_ocid     = "ocid1.compartment.oc1..exampleuniqueID"
+allowed_ssh_cidr     = "203.0.113.10/32"
+ssh_authorized_keys  = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI... user@example"
+
+# Optional
+# availability_domain = "kIdk:AP-SEOUL-1-AD-1"
+# image_ocid          = "ocid1.image.oc1.ap-seoul-1.exampleuniqueID"

@@ -1,0 +1,75 @@
+provider "oci" {
+  tenancy_ocid     = var.tenancy_ocid
+  user_ocid        = var.user_ocid
+  fingerprint      = var.fingerprint
+  private_key_path = var.private_key_path
+  region           = var.region
+}
+
+data "oci_identity_availability_domains" "ads" {
+  compartment_id = var.tenancy_ocid
+}
+
+locals {
+  selected_availability_domain = coalesce(var.availability_domain, data.oci_identity_availability_domains.ads.availability_domains[0].name)
+
+  instance_definitions = {
+    "bastion-1" = {
+      subnet_id        = module.network.public_subnet_id
+      assign_public_ip = true
+      nsg_ids          = [module.security.bastion_nsg_id]
+      role             = "bastion"
+    }
+    "k3s-node-1" = {
+      subnet_id        = module.network.private_subnet_id
+      assign_public_ip = false
+      nsg_ids          = [module.security.k3s_nsg_id]
+      role             = "server+worker"
+    }
+    "k3s-node-2" = {
+      subnet_id        = module.network.private_subnet_id
+      assign_public_ip = false
+      nsg_ids          = [module.security.k3s_nsg_id]
+      role             = "worker"
+    }
+    "k3s-node-3" = {
+      subnet_id        = module.network.private_subnet_id
+      assign_public_ip = false
+      nsg_ids          = [module.security.k3s_nsg_id]
+      role             = "worker"
+    }
+  }
+}
+
+module "network" {
+  source = "./modules/network"
+
+  compartment_ocid = var.compartment_ocid
+  vcn_cidr_block   = var.vcn_cidr_block
+  public_subnet    = var.public_subnet_cidr
+  private_subnet   = var.private_subnet_cidr
+}
+
+module "security" {
+  source = "./modules/security"
+
+  compartment_ocid    = var.compartment_ocid
+  vcn_id              = module.network.vcn_id
+  allowed_ssh_cidr    = var.allowed_ssh_cidr
+  enable_kubelet_port = var.enable_kubelet_port
+}
+
+module "compute" {
+  source = "./modules/compute"
+
+  compartment_ocid        = var.compartment_ocid
+  availability_domain     = local.selected_availability_domain
+  ssh_authorized_keys     = var.ssh_authorized_keys
+  image_ocid              = var.image_ocid
+  ubuntu_image_build      = var.ubuntu_image_build
+  shape                   = var.shape
+  ocpus                   = var.ocpus
+  memory_in_gbs           = var.memory_in_gbs
+  boot_volume_size_in_gbs = var.boot_volume_size_in_gbs
+  instances               = local.instance_definitions
+}
