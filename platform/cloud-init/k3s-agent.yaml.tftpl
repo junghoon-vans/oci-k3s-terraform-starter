@@ -10,9 +10,44 @@ write_files:
       server: https://${server_node_ip}:6443
       token: ${k3s_token}
       node-ip: ${agent_node_ip}
+  - path: /usr/local/sbin/k3s-host-firewall.sh
+    permissions: "0755"
+    owner: root:root
+    content: |
+      #!/usr/bin/env bash
+      set -eu
+
+      ensure_rule() {
+        chain="$1"
+        shift
+        if ! iptables -C "$chain" "$@" 2>/dev/null; then
+          iptables -I "$chain" 1 "$@"
+        fi
+      }
+
+      ensure_rule INPUT -s 10.0.10.0/24 -p udp --dport 8472 -j ACCEPT
+      ensure_rule INPUT -s 10.0.10.0/24 -p tcp --dport 10250 -j ACCEPT
+  - path: /etc/systemd/system/k3s-host-firewall.service
+    permissions: "0644"
+    owner: root:root
+    content: |
+      [Unit]
+      Description=Ensure host firewall allows k3s node traffic
+      Wants=network-online.target
+      After=network-online.target
+
+      [Service]
+      Type=oneshot
+      ExecStart=/usr/local/sbin/k3s-host-firewall.sh
+      RemainAfterExit=yes
+
+      [Install]
+      WantedBy=multi-user.target
 
 runcmd:
   - timedatectl set-timezone Asia/Seoul || true
+  - systemctl daemon-reload
+  - systemctl enable --now k3s-host-firewall.service
   - |
     for i in $(seq 1 60); do
       nc -z ${server_node_ip} 6443 && break
