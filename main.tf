@@ -12,7 +12,7 @@ data "oci_identity_availability_domains" "ads" {
 
 locals {
   selected_availability_domain = coalesce(var.availability_domain, data.oci_identity_availability_domains.ads.availability_domains[0].name)
-  cloud_init_dir               = "${path.root}/../cloud-init"
+  cloud_init_dir               = "${path.root}/cloud-init"
 
   instance_definitions = {
     "k3s-node-1" = {
