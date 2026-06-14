@@ -46,36 +46,6 @@ locals {
         tailscale_tag      = "tag:k3s-agent"
       }))
     }
-    "k3s-node-3" = {
-      subnet_id        = module.network.private_subnet_id
-      assign_public_ip = false
-      private_ip       = "10.0.10.13"
-      nsg_ids          = [module.security.k3s_nsg_id]
-      role             = "worker"
-      user_data_base64 = base64encode(templatefile("${local.cloud_init_dir}/k3s-agent.yaml.tftpl", {
-        k3s_token          = var.k3s_token
-        k3s_version        = var.k3s_version
-        server_node_ip     = "10.0.10.11"
-        agent_node_ip      = "10.0.10.13"
-        tailscale_auth_key = var.tailscale_auth_key_agent
-        tailscale_tag      = "tag:k3s-agent"
-      }))
-    }
-    "k3s-node-4" = {
-      subnet_id        = module.network.private_subnet_id
-      assign_public_ip = false
-      private_ip       = "10.0.10.14"
-      nsg_ids          = [module.security.k3s_nsg_id]
-      role             = "worker"
-      user_data_base64 = base64encode(templatefile("${local.cloud_init_dir}/k3s-agent.yaml.tftpl", {
-        k3s_token          = var.k3s_token
-        k3s_version        = var.k3s_version
-        server_node_ip     = "10.0.10.11"
-        agent_node_ip      = "10.0.10.14"
-        tailscale_auth_key = var.tailscale_auth_key_agent
-        tailscale_tag      = "tag:k3s-agent"
-      }))
-    }
   }
 
   ingress_listener_to_nodeport = {
