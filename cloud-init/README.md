@@ -1,7 +1,7 @@
 # Cloud-init Templates
 
 - `k3s-server.yaml.tftpl`: k3s server bootstrap for `k3s-node-1`.
-- `k3s-agent.yaml.tftpl`: k3s agent bootstrap for `k3s-node-2/3/4`.
+- `k3s-agent.yaml.tftpl`: k3s agent bootstrap for `k3s-node-2`.
 
 Both templates install and join Tailscale with tagged auth keys.
 
