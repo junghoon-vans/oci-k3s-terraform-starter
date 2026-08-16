@@ -10,6 +10,7 @@ write_files:
       server: https://${server_node_ip}:6443
       token: ${k3s_token}
       node-ip: ${agent_node_ip}
+${extra_config}
   - path: /usr/local/sbin/k3s-host-firewall.sh
     permissions: "0755"
     owner: root:root

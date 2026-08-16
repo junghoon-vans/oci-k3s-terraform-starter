@@ -16,11 +16,16 @@ locals {
 
   instance_definitions = {
     "k3s-node-1" = {
-      subnet_id        = module.network.private_subnet_id
-      assign_public_ip = false
-      private_ip       = "10.0.10.11"
-      nsg_ids          = [module.security.k3s_nsg_id]
-      role             = "server+worker"
+      subnet_id               = module.network.private_subnet_id
+      assign_public_ip        = false
+      private_ip              = "10.0.10.11"
+      nsg_ids                 = [module.security.k3s_nsg_id]
+      role                    = "server+worker"
+      image_ocid              = var.image_ocid
+      shape                   = var.shape
+      boot_volume_size_in_gbs = var.boot_volume_size_in_gbs
+      ocpus                   = var.ocpus
+      memory_in_gbs           = var.memory_in_gbs
       user_data_base64 = base64encode(templatefile("${local.cloud_init_dir}/k3s-server.yaml.tftpl", {
         k3s_token           = var.k3s_token
         k3s_version         = var.k3s_version
@@ -32,11 +37,16 @@ locals {
       }))
     }
     "k3s-node-2" = {
-      subnet_id        = module.network.private_subnet_id
-      assign_public_ip = false
-      private_ip       = "10.0.10.12"
-      nsg_ids          = [module.security.k3s_nsg_id]
-      role             = "worker"
+      subnet_id               = module.network.private_subnet_id
+      assign_public_ip        = false
+      private_ip              = "10.0.10.12"
+      nsg_ids                 = [module.security.k3s_nsg_id]
+      role                    = "worker"
+      image_ocid              = var.image_ocid
+      shape                   = var.shape
+      boot_volume_size_in_gbs = var.boot_volume_size_in_gbs
+      ocpus                   = var.ocpus
+      memory_in_gbs           = var.memory_in_gbs
       user_data_base64 = base64encode(templatefile("${local.cloud_init_dir}/k3s-agent.yaml.tftpl", {
         k3s_token          = var.k3s_token
         k3s_version        = var.k3s_version
@@ -44,6 +54,59 @@ locals {
         agent_node_ip      = "10.0.10.12"
         tailscale_auth_key = var.tailscale_auth_key_agent
         tailscale_tag      = "tag:k3s-agent"
+        extra_config       = ""
+      }))
+    }
+    "k3s-amd-1" = {
+      subnet_id               = module.network.private_subnet_id
+      assign_public_ip        = false
+      private_ip              = "10.0.10.13"
+      nsg_ids                 = [module.security.k3s_nsg_id]
+      role                    = "worker"
+      image_ocid              = var.amd_image_ocid
+      shape                   = "VM.Standard.E2.1.Micro"
+      boot_volume_size_in_gbs = var.amd_boot_volume_size_in_gbs
+      ocpus                   = null
+      memory_in_gbs           = null
+      user_data_base64 = base64encode(templatefile("${local.cloud_init_dir}/k3s-agent.yaml.tftpl", {
+        k3s_token          = var.k3s_token
+        k3s_version        = var.k3s_version
+        server_node_ip     = "10.0.10.11"
+        agent_node_ip      = "10.0.10.13"
+        tailscale_auth_key = var.tailscale_auth_key_agent
+        tailscale_tag      = "tag:k3s-agent"
+        extra_config       = <<EOT
+      node-label:
+        - workload=amd64-tiny
+      node-taint:
+        - workload=amd64-tiny:NoSchedule
+EOT
+      }))
+    }
+    "k3s-amd-2" = {
+      subnet_id               = module.network.private_subnet_id
+      assign_public_ip        = false
+      private_ip              = "10.0.10.14"
+      nsg_ids                 = [module.security.k3s_nsg_id]
+      role                    = "worker"
+      image_ocid              = var.amd_image_ocid
+      shape                   = "VM.Standard.E2.1.Micro"
+      boot_volume_size_in_gbs = var.amd_boot_volume_size_in_gbs
+      ocpus                   = null
+      memory_in_gbs           = null
+      user_data_base64 = base64encode(templatefile("${local.cloud_init_dir}/k3s-agent.yaml.tftpl", {
+        k3s_token          = var.k3s_token
+        k3s_version        = var.k3s_version
+        server_node_ip     = "10.0.10.11"
+        agent_node_ip      = "10.0.10.14"
+        tailscale_auth_key = var.tailscale_auth_key_agent
+        tailscale_tag      = "tag:k3s-agent"
+        extra_config       = <<EOT
+      node-label:
+        - workload=amd64-tiny
+      node-taint:
+        - workload=amd64-tiny:NoSchedule
+EOT
       }))
     }
   }
@@ -59,13 +122,15 @@ locals {
     }
   }
 
+  # Only the ARM nodes serve public ingress; the AMD nodes stay off the NLB
+  # backend set (they're sized/tainted for small, isolated workloads instead).
   ingress_backend_targets = {
     for target in flatten([
       for listener_key, listener in local.ingress_listener_to_nodeport : [
-        for node_name, node in local.instance_definitions : {
+        for node_name in ["k3s-node-1", "k3s-node-2"] : {
           key             = "${listener_key}-${node_name}"
           backend_set_key = listener_key
-          ip_address      = node.private_ip
+          ip_address      = local.instance_definitions[node_name].private_ip
           node_port       = listener.node_port
         }
       ]
@@ -95,13 +160,8 @@ module "security" {
 module "compute" {
   source = "./modules/compute"
 
-  compartment_ocid        = var.compartment_ocid
-  availability_domain     = local.selected_availability_domain
-  ssh_authorized_keys     = var.ssh_authorized_keys
-  image_ocid              = var.image_ocid
-  shape                   = var.shape
-  ocpus                   = var.ocpus
-  memory_in_gbs           = var.memory_in_gbs
-  boot_volume_size_in_gbs = var.boot_volume_size_in_gbs
-  instances               = local.instance_definitions
+  compartment_ocid    = var.compartment_ocid
+  availability_domain = local.selected_availability_domain
+  ssh_authorized_keys = var.ssh_authorized_keys
+  instances           = local.instance_definitions
 }
