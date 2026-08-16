@@ -1,4 +1,4 @@
-# oci-k3s-terraform-starter
+# oci-k3s-terraform-template
 
 Terraform starter for a k3s cluster on the OCI Always Free tier: 2 ARM
 (`A1.Flex`) nodes plus 2 AMD (`E2.1.Micro`) nodes, with Tailscale bootstrap.
