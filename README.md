@@ -100,9 +100,11 @@ terraform apply tfplan
 
 ## CI/CD
 
-`.github/workflows/terraform.yml` is a reference GitHub Actions pipeline --
-it won't run successfully until you configure the secrets below for your own
-OCI tenancy:
+`.github/workflows/terraform.yml` is a reference GitHub Actions pipeline. Both
+jobs check for `OCI_TENANCY_OCID` in an early step and skip the rest of their
+steps (reporting success, not failure) if it isn't set, so a fresh clone/fork
+doesn't show a red X before you've configured anything. Configure the secrets
+below for your own OCI tenancy to actually run it:
 
 - Pull requests touching `**.tf` / `**.tftpl`: `terraform fmt -check`, `validate`, and
   `plan`, with the plan posted as a PR comment.

@@ -39,12 +39,27 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # `secrets` isn't available in job-level `if:`, so this step-level
+      # check is what lets the job report success-with-skipped-steps
+      # (instead of failing) on a fresh clone/fork with no secrets set yet.
+      - name: Check OCI secrets configured
+        id: check
+        run: |
+          if [ -n "${{ secrets.OCI_TENANCY_OCID }}" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::OCI secrets aren't configured on this repo yet -- skipping plan. See README.md#cicd."
+          fi
+
       - uses: hashicorp/setup-terraform@v3
+        if: steps.check.outputs.configured == 'true'
         with:
           terraform_version: "1.15.8"
           terraform_wrapper: false
 
       - name: Write OCI credentials
+        if: steps.check.outputs.configured == 'true'
         run: |
           umask 077
           printf '%s' "${{ secrets.OCI_PRIVATE_KEY }}" > "$RUNNER_TEMP/oci_api_key.pem"
@@ -60,6 +75,7 @@ jobs:
           } > "$HOME/.oci/config"
 
       - name: Terraform Init
+        if: steps.check.outputs.configured == 'true'
         run: |
           terraform init -input=false \
             -backend-config="bucket=${{ secrets.TF_STATE_BUCKET }}" \
@@ -70,21 +86,24 @@ jobs:
             -backend-config="config_file_profile=DEFAULT"
 
       - name: Terraform Fmt Check
+        if: steps.check.outputs.configured == 'true'
         run: terraform fmt -check -recursive
 
       - name: Terraform Validate
+        if: steps.check.outputs.configured == 'true'
         run: terraform validate
 
       - name: Terraform Plan
+        if: steps.check.outputs.configured == 'true'
         id: plan
         run: terraform plan -input=false -no-color -out=tfplan
 
       - name: Render plan summary
-        if: always()
+        if: steps.check.outputs.configured == 'true' && always()
         run: terraform show -no-color tfplan > plan.txt
 
       - name: Comment plan on PR
-        if: always()
+        if: steps.check.outputs.configured == 'true' && always()
         uses: actions/github-script@v7
         with:
           script: |
@@ -104,12 +123,24 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Check OCI secrets configured
+        id: check
+        run: |
+          if [ -n "${{ secrets.OCI_TENANCY_OCID }}" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::OCI secrets aren't configured on this repo yet -- skipping apply. See README.md#cicd."
+          fi
+
       - uses: hashicorp/setup-terraform@v3
+        if: steps.check.outputs.configured == 'true'
         with:
           terraform_version: "1.15.8"
           terraform_wrapper: false
 
       - name: Write OCI credentials
+        if: steps.check.outputs.configured == 'true'
         run: |
           umask 077
           printf '%s' "${{ secrets.OCI_PRIVATE_KEY }}" > "$RUNNER_TEMP/oci_api_key.pem"
@@ -125,6 +156,7 @@ jobs:
           } > "$HOME/.oci/config"
 
       - name: Terraform Init
+        if: steps.check.outputs.configured == 'true'
         run: |
           terraform init -input=false \
             -backend-config="bucket=${{ secrets.TF_STATE_BUCKET }}" \
@@ -135,7 +167,9 @@ jobs:
             -backend-config="config_file_profile=DEFAULT"
 
       - name: Terraform Plan
+        if: steps.check.outputs.configured == 'true'
         run: terraform plan -input=false -no-color -out=tfplan
 
       - name: Terraform Apply
+        if: steps.check.outputs.configured == 'true'
         run: terraform apply -input=false -auto-approve tfplan
