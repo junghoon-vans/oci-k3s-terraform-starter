@@ -4,7 +4,9 @@ Terraform starter for a k3s cluster on the OCI Always Free tier: 2 ARM
 (`A1.Flex`) nodes plus 2 AMD (`E2.1.Micro`) nodes, with Tailscale bootstrap.
 This is a template -- clone it, point it at your own OCI tenancy, and adapt
 it as needed. See [CONTRIBUTING.md](./CONTRIBUTING.md) for the PR/plan
-workflow this repo uses.
+workflow this repo uses, and [AGENTS.md](./AGENTS.md) (symlinked as
+`CLAUDE.md`) if you're using a coding agent to modify it -- it documents one
+cloud-init gotcha that's easy to reintroduce silently.
 
 ## Topology
 
@@ -37,6 +39,8 @@ nodes or larger disks):
 
 ```text
 .
+├── AGENTS.md
+├── CLAUDE.md -> AGENTS.md
 ├── backend.tf
 ├── backend.hcl.example
 ├── CONTRIBUTING.md
