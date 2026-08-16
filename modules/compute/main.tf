@@ -3,11 +3,15 @@ resource "oci_core_instance" "this" {
   compartment_id      = var.compartment_ocid
   availability_domain = var.availability_domain
   display_name        = each.key
-  shape               = var.shape
+  shape               = each.value.shape
 
-  shape_config {
-    ocpus         = var.ocpus
-    memory_in_gbs = var.memory_in_gbs
+  dynamic "shape_config" {
+    for_each = each.value.ocpus != null && each.value.memory_in_gbs != null ? [each.value] : []
+
+    content {
+      ocpus         = shape_config.value.ocpus
+      memory_in_gbs = shape_config.value.memory_in_gbs
+    }
   }
 
   create_vnic_details {
@@ -23,10 +27,16 @@ resource "oci_core_instance" "this" {
     user_data           = each.value.user_data_base64
   }
 
+  lifecycle {
+    ignore_changes = [
+      metadata,
+    ]
+  }
+
   source_details {
     source_type             = "image"
-    source_id               = var.image_ocid
-    boot_volume_size_in_gbs = var.boot_volume_size_in_gbs
+    source_id               = each.value.image_ocid
+    boot_volume_size_in_gbs = each.value.boot_volume_size_in_gbs
   }
 }
 

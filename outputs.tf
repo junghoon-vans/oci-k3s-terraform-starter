@@ -1,5 +1,5 @@
 locals {
-  k3s_names = ["k3s-node-1", "k3s-node-2"]
+  k3s_names = ["k3s-node-1", "k3s-node-2", "k3s-amd-1", "k3s-amd-2"]
 }
 
 output "k3s_private_ips" {

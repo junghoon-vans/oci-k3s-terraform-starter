@@ -33,7 +33,13 @@ variable "availability_domain" {
 }
 
 variable "image_ocid" {
-  type = string
+  type        = string
+  description = "ARM (aarch64) Ubuntu image OCID for the VM.Standard.A1.Flex nodes."
+}
+
+variable "amd_image_ocid" {
+  type        = string
+  description = "AMD (x86_64) Ubuntu image OCID for the VM.Standard.E2.1.Micro worker."
 }
 
 variable "k3s_token" {
@@ -84,6 +90,12 @@ variable "memory_in_gbs" {
 variable "boot_volume_size_in_gbs" {
   type    = number
   default = 50
+}
+
+variable "amd_boot_volume_size_in_gbs" {
+  type        = number
+  default     = 50
+  description = "Boot volume size for the AMD micro worker. Keep total boot and block volumes within the Always Free block storage allowance."
 }
 
 variable "enable_kubelet_port" {
